@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#faf7f2">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="K-meal">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="application-name" content="K-meal">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>K-meal</title>
+<script>
+const mq = matchMedia('(prefers-color-scheme: dark)')
+const pref = () => { try { return localStorage.getItem('k-meal:theme') || 'system' } catch { return 'system' } }
+function applyTheme() {
+  const dark = pref() === 'dark' || (pref() === 'system' && mq.matches)
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  document.querySelector('meta[name=theme-color]').content = dark ? '#141210' : '#faf7f2'
+}
+applyTheme()
+mq.addEventListener('change', applyTheme)
+</script>
+<style>
+:root{--bg:#faf7f2;--card:#fff;--text:#231f1a;--muted:#786e63;--line:#e9e1d6;--chip:#f2ebe1;--accent:#d2622a;--today:#fff3ea;--on-accent:#fff;--danger:#c23434;--danger-soft:#fde4e4;--gold:#9a6f00;--gold-soft:#fff1c2;--gold-line:#e6c35c;--sheen:rgba(255,255,255,.75);--shadow:0 1px 2px rgba(60,40,20,.06),0 2px 8px rgba(60,40,20,.05);color-scheme:light}
+:root[data-theme=dark]{--bg:#141210;--card:#1f1c19;--text:#f3ede5;--muted:#a69c90;--line:#34302b;--chip:#2c2824;--accent:#f0874a;--today:#2b2019;--on-accent:#1a120c;--danger:#ff8080;--danger-soft:#3d2020;--gold:#f2c94c;--gold-soft:#3a3115;--gold-line:#7a6320;--sheen:rgba(255,236,170,.22);--shadow:none;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+[role=button]{cursor:pointer;touch-action:manipulation}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left))}
+.bar{display:flex;align-items:center;gap:2px;min-height:52px}
+.bar h1{flex:1;min-width:0;font-size:18px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar h1 small{font-size:14px;color:var(--muted);font-weight:500}
+.bar h1.brand{text-align:left;font-size:24px;padding-left:8px;letter-spacing:-.02em}
+.bar h1.dt{text-align:left;display:grid;line-height:1.2}
+.bar h1.dt span{font-size:13px;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.ib{min-width:44px;height:44px;border:0;background:none;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;color:var(--accent);font-size:17px;font-weight:600;flex:none}
+.ib svg{width:22px;height:22px;flex:none}
+.ib.back{padding:0 8px 0 2px;gap:0}
+.ib:active,.btn:active,[role=button]:active{opacity:.7}
+.range{flex:1;min-width:0;min-height:44px;border:0;background:none;display:grid;justify-items:center;line-height:1.2;padding:4px 0}
+.range b{font-size:16px;white-space:nowrap}
+.range small{font-size:13px;color:var(--accent);font-weight:600}
+.range:disabled{opacity:1;color:var(--text)}
+.range:disabled small{color:var(--muted);font-weight:500}
+main{padding:12px max(16px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+body.editing main{padding-bottom:calc(45vh + env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);min-width:0}
+.grid{display:grid;gap:10px}
+.dh{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;min-height:24px}
+.dh b{font-size:17px}
+.dh span{color:var(--muted)}
+.dh em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;color:var(--on-accent);background:var(--accent);padding:2px 9px;border-radius:999px}
+.dh i{margin-left:auto;font-style:normal;font-size:13px;color:var(--muted)}
+.day.today{border:2px solid var(--accent);background:var(--today)}
+.ml{display:grid;grid-template-columns:72px minmax(0,1fr);column-gap:8px;padding:3px 0;align-items:start}
+.slot{color:var(--muted);font-size:13px;padding-top:3px}
+.foods{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+.food{display:inline-block;max-width:100%;padding:2px 9px;border-radius:13px;background:var(--chip);font-size:15px;overflow-wrap:anywhere}
+.food.first{background:linear-gradient(110deg,transparent 35%,var(--sheen) 50%,transparent 65%) no-repeat,var(--gold-soft);background-size:250% 100%,auto;box-shadow:inset 0 0 0 1px var(--gold-line);animation:sheen 3.2s ease-in-out infinite}
+.spark{display:inline-block;font-style:normal;margin-right:3px;animation:twinkle 2.4s ease-in-out infinite}
+@keyframes sheen{0%{background-position:160% 0,0 0}55%,100%{background-position:-60% 0,0 0}}
+@keyframes twinkle{0%,100%{transform:scale(1) rotate(0);filter:drop-shadow(0 0 0 transparent)}50%{transform:scale(1.2) rotate(12deg);filter:drop-shadow(0 0 3px rgba(255,196,40,.9))}}
+.note{grid-column:2;color:var(--muted);font-size:14px;overflow-wrap:anywhere;margin-top:3px;white-space:pre-line}
+.empty{color:var(--muted);font-size:15px}
+.empty.big{text-align:center;padding:28px 8px;font-size:16px;overflow-wrap:anywhere}
+.amt{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.rx{font-size:13px;padding:2px 8px;border-radius:999px;background:var(--chip);white-space:nowrap;flex:none}
+.rx.allergic{background:var(--danger-soft);color:var(--danger);font-weight:600}
+.meal .mh{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
+.meal .mh b{margin-right:auto}
+.meal .note{margin-top:8px}
+.btn{min-height:48px;border:0;border-radius:14px;padding:0 18px;background:var(--chip);font-size:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--text)}
+.btn svg{width:20px;height:20px}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.sm{min-height:44px;padding:0 14px}
+.btn.wide{width:100%;margin-top:10px}
+.add{width:100%;margin-top:12px}
+.prev{margin-top:28px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.pday{padding:10px 0;border-top:1px solid var(--line)}
+.form{display:grid;gap:16px;border:2px solid var(--accent)}
+.field{display:grid;gap:8px;min-width:0}
+.lbl{font-size:13px;font-weight:600;color:var(--muted)}
+.lbl small{font-weight:400}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.seg.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg button{min-height:44px;border:1px solid var(--line);background:var(--bg);border-radius:12px;font-size:14px;font-weight:600;padding:4px 2px;overflow-wrap:anywhere}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.seg button.allergic[aria-pressed=true]{background:var(--danger);border-color:var(--danger);color:var(--card)}
+input,textarea{width:100%;min-width:0;font-size:16px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);-webkit-appearance:none;appearance:none}
+textarea{resize:vertical;min-height:72px}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
+::placeholder{color:var(--muted);opacity:.8}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 0 0 14px;font-size:16px;border-radius:22px}
+.chip>span{overflow-wrap:anywhere;padding:8px 0;min-width:0}
+.chip button{width:44px;height:44px;border:0;background:none;color:var(--muted);font-size:22px;line-height:1;flex:none}
+.fin{display:flex;align-items:center;gap:8px}
+.newtag{flex:none;font-size:14px;font-weight:700;color:var(--gold);white-space:nowrap}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sugg:empty{display:none}
+.sugg>span{font-size:13px;color:var(--muted);width:100%}
+.sugg button{min-height:44px;max-width:100%;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 14px;font-size:15px;overflow-wrap:anywhere;text-align:left}
+.actions{display:flex;gap:8px;align-items:center}
+.actions span{flex:1}
+.search{padding:0 8px 10px}
+#flist{display:grid;gap:8px}
+.count{font-size:13px;color:var(--muted);padding:0 4px}
+.fr{display:flex;gap:10px;align-items:center}
+.fn{flex:1;min-width:0;display:grid}
+.fn b{overflow-wrap:anywhere;font-size:17px}
+.fn span{font-size:14px;color:var(--muted)}
+.fdates{display:none;flex-wrap:wrap;gap:6px;margin-top:10px}
+.open .fdates{display:flex}
+.fdates button{min-height:44px;padding:0 12px;border:1px solid var(--line);background:var(--bg);border-radius:12px;font-size:14px}
+.settings section h2{margin-bottom:10px}
+.muted{color:var(--muted);font-size:14px}
+.muted+.muted{margin-top:6px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 32px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:15px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;text-align:center}
+#toast.show{opacity:1}
+dialog{margin:auto;border:0;border-radius:18px;background:var(--card);color:var(--text);padding:20px;width:min(340px,calc(100% - 32px));box-shadow:0 10px 40px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog p{white-space:pre-line;margin-bottom:18px;overflow-wrap:anywhere}
+dialog .actions{justify-content:flex-end}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="dlg"><form method="dialog"><p></p><div class="actions"><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok" id="dok">OK</button></div></form></dialog>
+<script>
+const K = 'k-meal:'
+const SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+const SLOT = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' }
+const REACT = { liked: ['😋', 'Liked'], disliked: ['🙅', 'Disliked'], allergic: ['⚠️', 'Allergy?'] }
+const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`
+const I = {
+  prev: svg('<path d="M15 5l-7 7 7 7"/>'),
+  next: svg('<path d="M9 5l7 7-7 7"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  settings: svg('<path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.5"/><circle cx="10" cy="17" r="2.5"/>')
+}
+const $ = s => document.querySelector(s)
+const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`)
+const key = f => f.trim().toLowerCase().replace(/\s+/g, ' ')
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
+const pad = n => String(n).padStart(2, '0')
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d) }
+const shift = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return ymd(d) }
+const today = () => ymd(new Date())
+const monday = s => shift(s, -((toDate(s).getDay() + 6) % 7))
+const validDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && ymd(toDate(s)) === s
+const fmt = (s, o) => toDate(s).toLocaleDateString('en-GB', o)
+const order = (a, b) => SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot) || a.t - b.t
+const sorted = list => [...(list || [])].sort(order)
+const before = (a, b) => a.date < b.date || (a.date === b.date && order(a, b) < 0)
+const store = (k, v) => { try { localStorage.setItem(K + k, v); return true } catch { return false } }
+const read = k => { try { return localStorage.getItem(K + k) } catch { return null } }
+
+let data = load()
+let index = foodIndex()
+let edit = null
+let view = {}
+let q = ''
+const scrolls = {}
+
+function load() {
+  try { const d = JSON.parse(read('data')); if (d && d.days) return d } catch {}
+  return { app: 'k-meal', version: 1, days: {} }
+}
+
+function foodIndex(exclude) {
+  const idx = new Map()
+  for (const date of Object.keys(data.days).sort()) {
+    for (const m of sorted(data.days[date])) {
+      if (m.id === exclude) continue
+      for (const f of m.foods) {
+        const k = key(f)
+        let e = idx.get(k)
+        if (!e) idx.set(k, e = { k, first: { date, slot: m.slot, t: m.t, id: m.id }, dates: [], count: 0, reaction: '' })
+        e.name = f
+        e.count++
+        if (e.dates.at(-1) !== date) e.dates.push(date)
+        if (m.reaction) e.reaction = m.reaction
+      }
+    }
+  }
+  return idx
+}
+
+const isFirst = (f, m) => index.get(key(f))?.first.id === m.id
+const inDraft = f => edit.foods.some(x => key(x) === key(f))
+function draftFirst(f) {
+  const e = edit.idx.get(key(f))
+  return !e || before({ date: edit.date, slot: edit.slot, t: edit.t }, e.first)
+}
+
+const pill = (f, first) => `<span class="food${first ? ' first' : ''}">${first ? '<i class="spark" aria-label="first time">✨</i>' : ''}${esc(f)}</span>`
+const rx = (r, full) => r ? `<span class="rx ${r}">${REACT[r][0]}${full || r === 'allergic' ? ' ' + REACT[r][1] : ''}</span>` : ''
+const amt = m => m.amount ? `<span class="amt">${esc(m.amount)}</span>` : ''
+const note = m => m.note ? `<p class="note">${esc(m.note)}</p>` : ''
+const foodsOf = m => m.foods.map(f => pill(f, isFirst(f, m))).join('')
+const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${amt(m)}${rx(m.reaction)}</div>${note(m)}</div>`
+const meals = d => sorted(data.days[d]).map(mealLine).join('') || '<p class="empty">Nothing logged</p>'
+const rel = d => ({ [today()]: 'Today', [shift(today(), -1)]: 'Yesterday', [shift(today(), 1)]: 'Tomorrow' })[d] || ''
+const header = (back, title, right = '<span class="ib"></span>', label = '') => `<header><div class="bar"><button class="ib back" data-back="${back}" aria-label="Back">${I.prev}${label}</button>${title}${right}</div>`
+
+function weekView(start) {
+  const t = today(), cur = monday(t) === start
+  const range = `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(shift(start, 6), { day: 'numeric', month: 'short', year: 'numeric' })}`
+  return `<header>
+    <div class="bar"><h1 class="brand">K-meal</h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
+    <div class="bar"><button class="ib" data-go="#/week/${shift(start, -7)}" data-replace aria-label="Previous week">${I.prev}</button><button class="range" ${cur ? 'disabled' : `data-go="#/week/${monday(t)}" data-replace`}><b>${range}</b><small>${cur ? 'This week' : 'Go to this week'}</small></button><button class="ib" data-go="#/week/${shift(start, 7)}" data-replace aria-label="Next week">${I.next}</button></div>
+  </header>
+  <main class="grid">${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `
+    <div class="card day${d === t ? ' today' : ''}" role="button" tabindex="0" data-go="#/day/${d}">
+      <div class="dh"><b>${fmt(d, { weekday: 'short' })}</b><span>${fmt(d, { day: 'numeric', month: 'short' })}</span>${d === t ? '<em>Today</em>' : ''}</div>
+      ${meals(d)}
+    </div>`).join('')}
+  </main>`
+}
+
+function dayView(d) {
+  const ms = sorted(data.days[d])
+  const card = m => `<div class="card meal" role="button" tabindex="0" data-act="edit" data-id="${m.id}"><div class="mh"><b>${SLOT[m.slot]}</b>${amt(m)}${rx(m.reaction, true)}</div><div class="foods">${foodsOf(m)}</div>${note(m)}</div>`
+  return `${header(`#/week/${monday(d)}`, `<h1 class="dt">${fmt(d, { weekday: 'long' })}<span>${fmt(d, { day: 'numeric', month: 'short', year: 'numeric' })}${rel(d) ? ' · ' + rel(d) : ''}</span></h1>`,
+    `<button class="ib" data-go="#/day/${shift(d, -1)}" data-replace aria-label="Previous day">${I.prev}</button><button class="ib" data-go="#/day/${shift(d, 1)}" data-replace aria-label="Next day">${I.next}</button>`, 'Week')}</header>
+  <main>
+    <section class="grid">${ms.map(m => edit?.id === m.id ? form() : card(m)).join('')}${edit && !edit.id ? form() : ''}${!ms.length && !edit ? '<p class="empty big">Nothing logged yet</p>' : ''}</section>
+    ${edit ? '' : `<button class="btn primary add" data-act="new">${I.plus}Add meal</button>`}
+    <section class="prev"><h2>Previous days</h2>${[1, 2, 3, 4].map(i => shift(d, -i)).map(p => `
+      <div class="pday"><div class="dh"><b>${fmt(p, { weekday: 'short' })}</b><span>${fmt(p, { day: 'numeric', month: 'short' })}</span><i>${rel(p)}</i></div>${meals(p)}</div>`).join('')}
+    </section>
+  </main>`
+}
+
+function form() {
+  const seg = (act, opts, cur) => opts.map(([v, l]) => `<button type="button" class="${v}" data-act="${act}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')
+  return `<form class="card form" id="mf" autocomplete="off">
+    <div class="seg" role="group" aria-label="Meal">${seg('slot', Object.entries(SLOT), edit.slot)}</div>
+    <div class="field" id="ff"><span class="lbl">Foods</span><div class="chips" id="chips">${chips()}</div>
+      <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="sentences" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
+      <div class="sugg" id="sugg">${sugg('')}</div></div>
+    <label class="field"><span class="lbl">Amount <small>optional</small></span><input id="fa" value="${esc(edit.amount)}" placeholder="e.g. 3 spoons"></label>
+    <div class="field"><span class="lbl">Reaction <small>optional</small></span><div class="seg three" role="group" aria-label="Reaction">${seg('rx', Object.entries(REACT).map(([k, [e, l]]) => [k, `${e} ${l}`]), edit.reaction)}</div></div>
+    <label class="field"><span class="lbl">Note <small>optional</small></span><textarea id="fn" rows="2">${esc(edit.note)}</textarea></label>
+    <div class="actions">${edit.id ? '<button type="button" class="btn danger" data-act="del">Delete</button>' : ''}<span></span><button type="button" class="btn" data-act="cancel">Cancel</button><button type="button" class="btn primary" data-act="save">Save</button></div>
+  </form>`
+}
+
+const chips = () => edit.foods.map((f, i) => { const first = draftFirst(f); return `<span class="chip food${first ? ' first' : ''}">${first ? '<i class="spark" aria-label="first time">✨</i>' : ''}<span>${esc(f)}</span><button type="button" data-act="rmfood" data-i="${i}" data-keep aria-label="Remove ${esc(f)}">×</button></span>` }).join('')
+
+function sugg(text) {
+  const k = key(text)
+  const rank = e => key(e.name).startsWith(k) ? 0 : key(e.name).includes(' ' + k) ? 1 : 2
+  const list = [...index.values()].filter(e => !inDraft(e.name) && key(e.name).includes(k))
+    .sort((a, b) => (k ? rank(a) - rank(b) : 0) || b.dates.at(-1).localeCompare(a.dates.at(-1)) || a.name.localeCompare(b.name))
+    .slice(0, 8)
+  return list.length ? `<span>${k ? 'Had before' : 'Recent'}</span>${list.map(e => `<button type="button" data-act="pick" data-f="${esc(e.name)}" data-keep>${esc(e.name)}</button>`).join('')}` : ''
+}
+
+function drawFoods() {
+  const v = $('#fi').value.trim()
+  $('#chips').innerHTML = chips()
+  $('#sugg').innerHTML = sugg(v)
+  $('#fnew').hidden = !(v && !v.includes(',') && draftFirst(v) && !inDraft(v))
+}
+
+function addFood(text) {
+  for (const f of text.split(',').map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean)) if (!inDraft(f)) edit.foods.push(f)
+  $('#fi').value = ''
+  drawFoods()
+}
+
+function foodsView() {
+  return `${header('#/', `<h1>Foods <small>${index.size}</small></h1>`)}
+    <div class="search"><input type="search" id="q" value="${esc(q)}" placeholder="Has she had…?" aria-label="Search foods" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="search"></div></header>
+  <main><div id="flist">${foodList()}</div></main>`
+}
+
+function foodList() {
+  if (!index.size) return '<p class="empty big">No foods logged yet.</p>'
+  const k = key(q)
+  const items = [...index.values()].filter(e => e.k.includes(k)).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+  if (!items.length) return `<p class="empty big">She hasn’t had “${esc(q.trim())}” yet.<br>It would be a new food ✨</p>`
+  return `<p class="count">${plural(items.length, 'food')}</p>` + items.map(e => `
+    <div class="card frow" role="button" tabindex="0" data-act="toggle">
+      <div class="fr"><div class="fn"><b>${esc(e.name)}</b><span>First ${fmt(e.first.date, { day: 'numeric', month: 'short', year: 'numeric' })} · ${plural(e.count, 'time')}</span></div>${rx(e.reaction, true)}</div>
+      <div class="fdates">${[...e.dates].reverse().map(d => `<button data-go="#/day/${d}">${fmt(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</button>`).join('')}</div>
+    </div>`).join('')
+}
+
+function settingsView() {
+  const n = Object.values(data.days).reduce((s, l) => s + l.length, 0)
+  const last = read('lastExport')
+  return `${header('#/', '<h1>Settings</h1>')}</header>
+  <main class="grid settings">
+    <section class="card"><h2>Appearance</h2><div class="seg three" role="group" aria-label="Appearance">${['system', 'light', 'dark'].map(v => `<button data-act="theme" data-v="${v}" aria-pressed="${pref() === v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div></section>
+    <section class="card"><h2>Backup</h2>
+      <p class="muted">${plural(n, 'meal')} on ${plural(Object.keys(data.days).length, 'day')} · ${plural(index.size, 'food')}. Everything is stored only on this phone.</p>
+      <p class="muted">${last ? `Last export: ${fmt(last, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Not exported yet.'}</p>
+      <button class="btn primary wide" data-act="exp">Export backup</button>
+      <a class="btn wide" id="dl" hidden></a>
+      <button class="btn wide" data-act="imp">Import backup…</button>
+      <input type="file" id="file" hidden>
+      <p class="muted" id="persist" style="margin-top:12px"></p>
+    </section>
+  </main>`
+}
+
+function render() {
+  const [name, arg] = location.hash.slice(2).split('/')
+  view = { name, date: arg }
+  if (edit && !(name === 'day' && arg === edit.date)) edit = null
+  document.body.classList.toggle('editing', !!edit)
+  $('#app').innerHTML = name === 'day' && validDate(arg) ? dayView(arg)
+    : name === 'foods' ? foodsView()
+    : name === 'settings' ? settingsView()
+    : weekView(monday(validDate(arg) ? arg : today()))
+  if (name === 'settings') navigator.storage?.persisted?.().then(p => { if ($('#persist')) $('#persist').textContent = p ? 'Storage is marked persistent.' : 'Storage is not marked persistent yet. Export backups regularly.' })
+}
+
+function go(h, replace) {
+  scrolls[location.hash] = scrollY
+  const d = history.state?.d || 0
+  history[replace ? 'replaceState' : 'pushState']({ d: replace ? d : d + 1 }, '', h)
+  render()
+  scrollTo(0, 0)
+}
+
+function back(h) {
+  if (history.state?.d > 0) history.back()
+  else go(h, true)
+}
+
+function commit(msg) {
+  if (!store('data', JSON.stringify(data))) { data = load(); index = foodIndex(); return toast('Not saved: storage is full or blocked'), false }
+  index = foodIndex()
+  edit = null
+  render()
+  toast(msg)
+  return true
+}
+
+function openForm(id) {
+  const d = view.date, m = id && data.days[d]?.find(x => x.id === id)
+  const used = new Set((data.days[d] || []).map(x => x.slot))
+  const h = new Date().getHours()
+  const slot = m?.slot || (d === today() ? (h < 11 ? 'breakfast' : h < 15 ? 'lunch' : h < 17 ? 'snack' : 'dinner') : SLOTS.find(s => !used.has(s)) || 'snack')
+  edit = { date: d, id: m ? id : null, slot, foods: m ? [...m.foods] : [], amount: m?.amount || '', reaction: m?.reaction || '', note: m?.note || '', t: m?.t ?? Date.now(), idx: foodIndex(m ? id : undefined) }
+  render()
+  if (m) scrollBy(0, $('#mf').getBoundingClientRect().top - $('header').getBoundingClientRect().bottom - 12)
+  else $('#fi').focus()
+  setTimeout(reveal, 350)
+}
+
+function ask(msg, ok, danger) {
+  const d = $('#dlg')
+  d.querySelector('p').textContent = msg
+  $('#dok').textContent = ok
+  $('#dok').className = `btn ${danger ? 'danger' : 'primary'}`
+  d.returnValue = ''
+  d.showModal()
+  return new Promise(res => { d.onclose = () => res(d.returnValue === 'ok') })
+}
+
+let toastTimer
+function toast(msg, ms = 2200) {
+  const t = $('#toast')
+  t.textContent = msg
+  t.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms)
+}
+
+function validate(o) {
+  if (!o || typeof o !== 'object' || o.app !== 'k-meal' || !o.days || typeof o.days !== 'object' || Array.isArray(o.days)) throw Error('This is not a K-meal backup file.')
+  const days = {}, ids = new Set(), str = v => typeof v === 'string' ? v.trim() : ''
+  for (const [date, list] of Object.entries(o.days)) {
+    if (!validDate(date) || !Array.isArray(list)) throw Error(`The backup has an invalid day: ${date}`)
+    const ms = list.map(m => {
+      const foods = Array.isArray(m?.foods) ? m.foods.filter(f => typeof f === 'string' && f.trim()).map(f => f.trim()) : []
+      if (!SLOTS.includes(m?.slot) || !foods.length || (m.reaction && !REACT[m.reaction])) throw Error(`The backup has an invalid meal on ${date}.`)
+      const id = typeof m.id === 'string' && m.id && !ids.has(m.id) ? m.id : uid()
+      ids.add(id)
+      return { id, slot: m.slot, foods, amount: str(m.amount), reaction: m.reaction || '', note: str(m.note), t: Number.isFinite(m.t) ? m.t : 0 }
+    })
+    if (ms.length) days[date] = ms
+  }
+  return { app: 'k-meal', version: 1, days }
+}
+
+async function importFile(file) {
+  let d
+  try { d = validate(JSON.parse(await file.text())) } catch (e) { return toast(e instanceof SyntaxError ? 'This file is not valid JSON.' : e.message, 4000) }
+  const count = x => Object.values(x.days).reduce((s, l) => s + l.length, 0)
+  const msg = `Replace all data with this backup?\n\nBackup: ${plural(count(d), 'meal')} on ${plural(Object.keys(d.days).length, 'day')}.\nOn this phone now: ${plural(count(data), 'meal')}.\n\nThis cannot be undone.`
+  if (!await ask(msg, 'Replace', true)) return
+  const old = data
+  data = d
+  if (commit('Backup imported')) q = ''
+  else data = old
+}
+
+async function exportData() {
+  const name = `k-meal-backup-${today()}.json`
+  const file = new File([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 1)], name, { type: 'application/json' })
+  const done = () => { store('lastExport', today()); render() }
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return done() } catch (e) { if (e.name === 'AbortError') return }
+  }
+  const a = $('#dl')
+  if (a.href) URL.revokeObjectURL(a.href)
+  a.href = URL.createObjectURL(file)
+  a.download = name
+  a.textContent = `Download ${name}`
+  a.hidden = false
+  a.click()
+  store('lastExport', today())
+}
+
+function reveal() {
+  const el = document.activeElement
+  if (!el?.matches('input,textarea') || !$('header')) return
+  const vv = window.visualViewport
+  const top = Math.max($('header').getBoundingClientRect().bottom, vv?.offsetTop || 0) + 8
+  const bottom = (vv ? vv.offsetTop + vv.height : innerHeight) - 8
+  const box = (el.id === 'fi' ? $('#ff') : el).getBoundingClientRect()
+  const dy = box.top < top ? box.top - top : box.bottom > bottom ? Math.min(box.bottom - bottom, box.top - top) : 0
+  if (dy) scrollBy(0, dy)
+}
+
+const act = {
+  new: () => openForm(null),
+  edit: el => openForm(el.dataset.id),
+  slot: el => { edit.slot = el.dataset.v; act.press(el, edit.slot); drawFoods() },
+  rx: el => { edit.reaction = edit.reaction === el.dataset.v ? '' : el.dataset.v; act.press(el, edit.reaction) },
+  press: (el, v) => [...el.parentNode.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)),
+  addfood: () => addFood($('#fi').value),
+  pick: el => addFood(el.dataset.f),
+  rmfood: el => { edit.foods.splice(+el.dataset.i, 1); drawFoods() },
+  cancel: () => { edit = null; render() },
+  save: () => {
+    addFood($('#fi').value)
+    if (!edit.foods.length) return toast('Add at least one food'), $('#fi').focus()
+    const m = { id: edit.id || uid(), slot: edit.slot, foods: edit.foods, amount: $('#fa').value.trim(), reaction: edit.reaction, note: $('#fn').value.trim(), t: edit.t }
+    const list = data.days[edit.date] ||= []
+    const i = list.findIndex(x => x.id === m.id)
+    i < 0 ? list.push(m) : list[i] = m
+    commit('Saved')
+  },
+  del: async () => {
+    if (!await ask('Delete this meal?', 'Delete', true)) return
+    const list = data.days[edit.date].filter(x => x.id !== edit.id)
+    list.length ? data.days[edit.date] = list : delete data.days[edit.date]
+    commit('Meal deleted')
+  },
+  toggle: el => el.classList.toggle('open'),
+  theme: el => { store('theme', el.dataset.v); applyTheme(); act.press(el, el.dataset.v) },
+  exp: exportData,
+  imp: () => $('#file').click()
+}
+
+document.addEventListener('mousedown', e => { if (e.target.closest('[data-keep]')) e.preventDefault() })
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]')
+  if (g) return g.disabled || go(g.dataset.go, 'replace' in g.dataset)
+  const b = e.target.closest('[data-back]')
+  if (b) return back(b.dataset.back)
+  const a = e.target.closest('[data-act]')
+  if (a) act[a.dataset.act](a)
+})
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'fi') { e.preventDefault(); addFood(e.target.value) }
+  else if (e.key === 'Enter' && e.target.id === 'fa') { e.preventDefault(); e.target.blur() }
+  else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button]')) { e.preventDefault(); e.target.click() }
+})
+document.addEventListener('input', e => {
+  if (e.target.id === 'fi') {
+    if (e.target.value.includes(',')) { const parts = e.target.value.split(','), rest = parts.pop(); addFood(parts.join(',')); e.target.value = rest.trimStart() }
+    drawFoods()
+  } else if (e.target.id === 'q') {
+    q = e.target.value
+    $('#flist').innerHTML = foodList()
+  }
+})
+document.addEventListener('change', e => { if (e.target.id === 'file' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = '' } })
+document.addEventListener('submit', e => { if (e.target.id === 'mf') e.preventDefault() })
+document.addEventListener('focusin', () => setTimeout(reveal, 350))
+window.visualViewport?.addEventListener('resize', () => setTimeout(reveal, 50))
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !edit) render() })
+addEventListener('popstate', () => { render(); scrollTo(0, scrolls[location.hash] || 0) })
+
+history.scrollRestoration = 'manual'
+if (!history.state) history.replaceState({ d: 0 }, '')
+render()
+navigator.storage?.persist?.()
+if ('serviceWorker' in navigator) {
+  const had = !!navigator.serviceWorker.controller
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !edit) location.reload() })
+  navigator.serviceWorker.register('sw.js')
+}
+</script>
+</body>
+</html>
