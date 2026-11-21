@@ -28,8 +28,8 @@ applyTheme()
 mq.addEventListener('change', applyTheme)
 </script>
 <style>
-:root{--bg:#faf7f2;--card:#fff;--text:#231f1a;--muted:#786e63;--line:#e9e1d6;--chip:#f2ebe1;--accent:#d2622a;--today:#fff3ea;--on-accent:#fff;--danger:#c23434;--danger-soft:#fde4e4;--gold:#9a6f00;--gold-soft:#fff1c2;--gold-line:#e6c35c;--sheen:rgba(255,255,255,.75);--shadow:0 1px 2px rgba(60,40,20,.06),0 2px 8px rgba(60,40,20,.05);color-scheme:light}
-:root[data-theme=dark]{--bg:#141210;--card:#1f1c19;--text:#f3ede5;--muted:#a69c90;--line:#34302b;--chip:#2c2824;--accent:#f0874a;--today:#2b2019;--on-accent:#1a120c;--danger:#ff8080;--danger-soft:#3d2020;--gold:#f2c94c;--gold-soft:#3a3115;--gold-line:#7a6320;--sheen:rgba(255,236,170,.22);--shadow:none;color-scheme:dark}
+:root{--bg:#faf7f2;--card:#fff;--text:#231f1a;--muted:#786e63;--line:#e9e1d6;--chip:#f2ebe1;--accent:#d2622a;--today:#fff3ea;--on-accent:#fff;--danger:#c23434;--danger-soft:#fde4e4;--gold:#9a6f00;--gold-soft:#fff1c2;--gold-line:#e6c35c;--sheen:rgba(255,255,255,.75);--shadow:0 1px 2px rgba(60,40,20,.06),0 2px 8px rgba(60,40,20,.05);--rose:#d9487a;--blob1:#ffd5bd;--blob2:#ffcfe0;color-scheme:light}
+:root[data-theme=dark]{--bg:#141210;--card:#1f1c19;--text:#f3ede5;--muted:#a69c90;--line:#34302b;--chip:#2c2824;--accent:#f0874a;--today:#2b2019;--on-accent:#1a120c;--danger:#ff8080;--danger-soft:#3d2020;--gold:#f2c94c;--gold-soft:#3a3115;--gold-line:#7a6320;--sheen:rgba(255,236,170,.22);--shadow:none;--rose:#f07aa0;--blob1:#5a2c16;--blob2:#4d1d35;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
@@ -135,17 +135,89 @@ dialog{margin:auto;border:0;border-radius:18px;background:var(--card);color:var(
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog p{white-space:pre-line;margin-bottom:18px;overflow-wrap:anywhere}
 dialog .actions{justify-content:flex-end}
+#hello{position:fixed;inset:0;z-index:30;display:grid;place-content:center;justify-items:center;gap:14px;padding:24px max(28px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left));text-align:center;background:var(--bg);overflow:hidden;animation:fadein .5s both}
+#hello:active{opacity:1}
+#hello::before,#hello::after{content:'';position:absolute;width:70vmax;height:70vmax;border-radius:50%;filter:blur(60px);opacity:.6;z-index:-1;animation:drift 14s ease-in-out infinite alternate}
+#hello::before{background:var(--blob1);top:-32vmax;left:-28vmax}
+#hello::after{background:var(--blob2);bottom:-32vmax;right:-28vmax;animation-delay:-7s}
+#hello img{border-radius:22px;box-shadow:0 8px 30px rgba(210,98,42,.25);animation:rise .9s both,bob 4s 1s ease-in-out infinite}
+#hello h1{font-size:clamp(40px,12vw,64px);font-weight:800;letter-spacing:-.02em;line-height:1.15;padding:0 4px;background:linear-gradient(100deg,var(--accent) 25%,var(--rose) 50%,var(--accent) 75%) 0 0/300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rise .9s .25s both,shimmer 6s 1.2s ease-in-out infinite}
+#hello p{font-size:19px;line-height:1.45;max-width:19em;opacity:.85;animation:rise .9s .75s both}
+#hello small{position:absolute;left:0;right:0;bottom:calc(36px + env(safe-area-inset-bottom));font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);animation:rise .8s 1.5s both,pulse 2.4s 2.3s ease-in-out infinite}
+#hello.out{animation:leave .45s ease-in both;pointer-events:none}
+.fl{position:absolute;bottom:-40px;left:var(--x);font-size:var(--s);font-style:normal;color:var(--c);opacity:0;z-index:-1;animation:float var(--d) var(--w) linear infinite}
+@keyframes fadein{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}}
+@keyframes drift{to{transform:translate(12vmax,10vmax) scale(1.15)}}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-3deg)}}
+@keyframes shimmer{50%{background-position:100% 0}}
+@keyframes pulse{50%{opacity:.35}}
+@keyframes leave{to{opacity:0;transform:scale(1.08)}}
+@keyframes float{15%{opacity:.75}100%{transform:translate(var(--dx),-115vh) rotate(var(--r));opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="hello" role="button" tabindex="0" data-act="hello"><img src="icon-180.png" alt="" width="84" height="84"><h1>Hi, Denitsa</h1><p id="phrase"></p><small>Tap to continue</small></div>
 <div id="toast" role="status" aria-live="polite"></div>
 <dialog id="dlg"><form method="dialog"><p></p><div class="actions"><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok" id="dok">OK</button></div></form></dialog>
 <script>
 const K = 'k-meal:'
 const SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
 const SLOT = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' }
+const PHRASES = [
+  "Your sharp mind is already planning tomorrow’s adventures.",
+  "Curious minds grow well under your careful, capable hands.",
+  "Every spoonful you prepare carries skill and steady love.",
+  "Ambition and tenderness suit you beautifully, both at once.",
+  "Today’s little wins deserve a proper celebration.",
+  "Your baby is lucky to have such a clever cook.",
+  "Smart, steady, and kind: quite the winning combination.",
+  "Let’s log today’s meals and celebrate every bite.",
+  "You bring focus to the kitchen and joy to the table.",
+  "Your goals are big, and so is your heart.",
+  "Plan boldly; your little one is watching and learning.",
+  "Nourishing a tiny person is serious, skilled work.",
+  "Good decisions look effortless on you, meal after meal.",
+  "Brilliant strategies start with a well-fed, happy baby.",
+  "Your confidence in the kitchen is growing beautifully.",
+  "Tracking every meal shows exactly how capable you are.",
+  "Organized, observant, and endlessly devoted: that’s you.",
+  "Your next big project can wait one spoonful.",
+  "Mealtimes are your quiet superpower, and you know it.",
+  "Every chart you fill in tells a story of care.",
+  "You’re building a future, one thoughtful meal at a time.",
+  "Your instincts have been right more often than not.",
+  "Bold dreams and warm kitchens suit you perfectly.",
+  "Your little one tastes the courage in every recipe.",
+  "Look at you, juggling wisdom, wonder, and wooden spoons.",
+  "Let’s make today’s menu as smart as you are.",
+  "Sweet progress deserves a smile and a quick log.",
+  "Your brain and your heart work wonderfully together.",
+  "Each new food is another brave, beautiful first.",
+  "Small daily choices are shaping a bright little life.",
+  "You’re the calm, capable hero of this feeding routine.",
+  "Curiosity runs in your family, and your baby shows it.",
+  "You plan ahead, and it shows in every well-timed meal.",
+  "Strong, focused, tender: a combination your baby adores.",
+  "Your energy turns ordinary Tuesdays into something special.",
+  "Let’s record today’s wins before the next big idea.",
+  "Your ambition has a delicious, nourishing side.",
+  "Every new taste is a lesson you designed with love.",
+  "Confidence looks good on you, especially at the high chair.",
+  "Your baby’s first flavors are in very capable hands.",
+  "Keep reaching higher; your kitchen is already the proof.",
+  "Intelligence, patience, and warmth make a rare recipe.",
+  "You’re mastering the art of balancing everything beautifully.",
+  "Ready for the next bold step? Your little one is too.",
+  "Hungry for growth? So is your little explorer.",
+  "Your planning skills turn chaos into calm, cozy mealtimes.",
+  "You manage the schedule, the menu, and the magic.",
+  "Each logged meal is a small, mighty act of care.",
+  "Your work at the table matters, and it shows.",
+  "Let’s make today count, one good meal at a time."
+]
 const REACT = { liked: ['😋', 'Liked'], disliked: ['🙅', 'Disliked'], allergic: ['⚠️', 'Allergy?'] }
 const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`
 const I = {
@@ -472,7 +544,8 @@ const act = {
   toggle: el => el.classList.toggle('open'),
   theme: el => { store('theme', el.dataset.v); applyTheme(); act.press(el, el.dataset.v) },
   exp: exportData,
-  imp: () => $('#file').click()
+  imp: () => $('#file').click(),
+  hello: el => { el.classList.add('out'); setTimeout(() => el.remove(), 450) }
 }
 
 document.addEventListener('mousedown', e => { if (e.target.closest('[data-keep]')) e.preventDefault() })
@@ -503,6 +576,11 @@ document.addEventListener('focusin', () => setTimeout(reveal, 350))
 window.visualViewport?.addEventListener('resize', () => setTimeout(reveal, 50))
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !edit) render() })
 addEventListener('popstate', () => { render(); scrollTo(0, scrolls[location.hash] || 0) })
+
+const rnd = (a, b) => (a + Math.random() * (b - a)).toFixed(1)
+$('#phrase').textContent = PHRASES[Math.floor(Math.random() * PHRASES.length)]
+$('#hello').insertAdjacentHTML('beforeend', Array.from({ length: 18 }, (_, i) => `<i class="fl" aria-hidden="true" style="--x:${rnd(0, 96)}%;--s:${rnd(12, 26)}px;--d:${rnd(7, 13)}s;--w:${rnd(-12, 0)}s;--dx:${rnd(-40, 40)}px;--r:${rnd(-90, 90)}deg;--c:var(--${['accent', 'rose', 'gold-line'][i % 3]})">${'♥✦✿'[i % 3]}</i>`).join(''))
+$('#hello').focus()
 
 history.scrollRestoration = 'manual'
 if (!history.state) history.replaceState({ d: 0 }, '')
