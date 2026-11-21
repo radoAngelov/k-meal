@@ -41,7 +41,8 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px so
 .bar{display:flex;align-items:center;gap:2px;min-height:52px}
 .bar h1{flex:1;min-width:0;font-size:18px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar h1 small{font-size:14px;color:var(--muted);font-weight:500}
-.bar h1.brand{text-align:left;font-size:24px;padding-left:8px;letter-spacing:-.02em}
+.bar h1.brand{padding-left:8px}
+.brand img{display:block;border-radius:9px}
 .bar h1.dt{text-align:left;display:grid;line-height:1.2}
 .bar h1.dt span{font-size:13px;font-weight:500;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
 .ib{min-width:44px;height:44px;border:0;background:none;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;color:var(--accent);font-size:17px;font-weight:600;flex:none}
@@ -225,7 +226,7 @@ function weekView(start) {
   const t = today(), cur = monday(t) === start
   const range = `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(shift(start, 6), { day: 'numeric', month: 'short', year: 'numeric' })}`
   return `<header>
-    <div class="bar"><h1 class="brand">K-meal</h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
+    <div class="bar"><h1 class="brand"><img src="icon-180.png" alt="K-meal" width="36" height="36"></h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
     <div class="bar"><button class="ib" data-go="#/week/${shift(start, -7)}" data-replace aria-label="Previous week">${I.prev}</button><button class="range" ${cur ? 'disabled' : `data-go="#/week/${monday(t)}" data-replace`}><b>${range}</b><small>${cur ? 'This week' : 'Go to this week'}</small></button><button class="ib" data-go="#/week/${shift(start, 7)}" data-replace aria-label="Next week">${I.next}</button></div>
   </header>
   <main class="grid">${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `

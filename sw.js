@@ -1,4 +1,4 @@
-const CACHE = 'k-meal-v1'
+const CACHE = 'k-meal-v2'
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png']
 
 self.addEventListener('install', e => e.waitUntil(
