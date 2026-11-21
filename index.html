@@ -118,8 +118,8 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tags button{min-height:44px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 12px;font-size:15px;display:inline-flex;align-items:center;gap:6px}
 .tags button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
-.tg{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;font-size:15px}
-.meal .tg{margin-top:8px}
+.tg{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;font-size:15px}
+.tgi{display:inline-flex;gap:2px;font-size:15px;color:var(--muted);white-space:nowrap}
 .tally{display:flex;flex-wrap:wrap;gap:6px}
 .tally span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:999px;background:var(--chip);font-size:15px;white-space:nowrap}
 .tally b{color:var(--accent);font-size:14px}
@@ -296,9 +296,9 @@ function draftFirst(f) {
 const pill = (f, first) => `<span class="food${first ? ' first' : ''}">${first ? '<i class="spark" aria-label="first time">✨</i>' : ''}${esc(f)}</span>`
 const rx = (r, full) => r ? `<span class="rx ${r}">${REACT[r][0]}${full || r === 'allergic' ? ' ' + REACT[r][1] : ''}</span>` : ''
 const note = m => m.note ? `<p class="note">${esc(m.note)}</p>` : ''
-const tagsOf = (m, full) => m.tags?.length ? `<div class="tg">${m.tags.map(t => full ? `<span class="rx">${TAG[t].join(' ')}</span>` : `<span title="${TAG[t][1]}" aria-label="${TAG[t][1]}">${TAG[t][0]}</span>`).join('')}</div>` : ''
+const tagsOf = (m, full) => !m.tags?.length ? '' : full ? `<div class="tg">${m.tags.map(t => `<span class="rx">${TAG[t].join(' ')}</span>`).join('')}</div>` : `<span class="tgi">(${m.tags.map(t => `<span title="${TAG[t][1]}" aria-label="${TAG[t][1]}">${TAG[t][0]}</span>`).join('')})</span>`
 const foodsOf = m => m.foods.map(f => pill(f, isFirst(f, m))).join('')
-const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${rx(m.reaction)}</div>${tagsOf(m)}${note(m)}</div>`
+const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${tagsOf(m)}${rx(m.reaction)}</div>${note(m)}</div>`
 const meals = d => sorted(data.days[d]).map(mealLine).join('') || '<p class="empty">Nothing logged</p>'
 const rel = d => ({ [today()]: 'Today', [shift(today(), -1)]: 'Yesterday', [shift(today(), 1)]: 'Tomorrow' })[d] || ''
 const header = (back, title, right = '<span class="ib"></span>', label = '') => `<header><div class="bar"><button class="ib back" data-back="${back}" aria-label="Back">${I.prev}${label}</button>${title}${right}</div>`
