@@ -40,7 +40,6 @@ button{cursor:pointer;touch-action:manipulation}
 header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left))}
 .bar{display:flex;align-items:center;gap:2px;min-height:52px}
 .bar h1{flex:1;min-width:0;font-size:18px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar h1 small{font-size:14px;color:var(--muted);font-weight:500}
 .bar h1.brand{padding-left:8px}
 .brand img{display:block;border-radius:9px}
 .bar h1.dt{text-align:left;display:grid;line-height:1.2}
@@ -124,7 +123,9 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
 .tally b{color:var(--accent);font-size:14px}
 .actions{display:flex;gap:8px;align-items:center}
 .actions span{flex:1}
-.search{padding:0 8px 10px}
+.search{padding:0 8px 10px;display:grid;gap:8px}
+.search .tags{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.search .tags button{justify-content:center}
 #flist{display:grid;gap:8px}
 .count{font-size:13px;color:var(--muted);padding:0 4px}
 .fr{display:flex;gap:10px;align-items:center}
@@ -259,6 +260,7 @@ let index = foodIndex()
 let edit = null
 let view = {}
 let q = ''
+const filt = { rx: '', from: '', slot: '' }
 const scrolls = {}
 
 function load() {
@@ -318,7 +320,7 @@ function weekView(start) {
   const t = today(), cur = monday(t) === start
   const range = `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(shift(start, 6), { day: 'numeric', month: 'short', year: 'numeric' })}`
   return `<header>
-    <div class="bar"><h1 class="brand"><img src="icon-180.png" alt="K-meal" width="36" height="36"></h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
+    <div class="bar"><h1 class="brand"><img src="icon-180.png" alt="K-meal" width="36" height="36"></h1><button class="ib" data-go="#/foods">History</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
     <div class="bar"><button class="ib" data-go="#/week/${shift(start, -7)}" data-replace aria-label="Previous week">${I.prev}</button><button class="range" ${cur ? 'disabled' : `data-go="#/week/${monday(t)}" data-replace`}><b>${range}</b><small>${cur ? 'This week' : 'Go to this week'}</small></button><button class="ib" data-go="#/week/${shift(start, 7)}" data-replace aria-label="Next week">${I.next}</button></div>
   </header>
   <main class="grid">
@@ -385,19 +387,36 @@ function addFood(text) {
 }
 
 function foodsView() {
-  return `${header('#/', `<h1>Foods <small>${index.size}</small></h1>`)}
-    <div class="search"><input type="search" id="q" value="${esc(q)}" placeholder="Has she had…?" aria-label="Search foods" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="search"></div></header>
+  const presets = [['Last week', shift(today(), -6)], ...[[1, 'Last month'], [3, 'Last 3 months'], [6, 'Last 6 months'], [12, 'Last year']].map(([n, l]) => { const d = toDate(today()); d.setMonth(d.getMonth() - n); return [l, ymd(d)] })]
+  return `${header('#/', '<h1>History</h1>')}
+    <div class="search"><input type="search" id="q" value="${esc(q)}" placeholder="Has she had…?" aria-label="Search foods" autocomplete="off" autocorrect="off" autocapitalize="none" enterkeyhint="search">
+      <div class="tags" role="group" aria-label="Meal">${Object.entries(SLOT).map(([k, l]) => `<button data-act="fslot" data-v="${k}" aria-pressed="${filt.slot === k}">${l}</button>`).join('')}</div>
+      <div class="tags" role="group" aria-label="Reaction">${Object.entries(REACT).map(([k, [e, l]]) => `<button data-act="frx" data-v="${k}" aria-pressed="${filt.rx === k}">${e} ${l}</button>`).join('')}</div>
+      <div class="tags" role="group" aria-label="Date range">${presets.map(([l, d]) => `<button data-act="frange" data-v="${d}" aria-pressed="${filt.from === d}">${l}</button>`).join('')}</div>
+    </div></header>
   <main><div id="flist">${foodList()}</div></main>`
 }
 
 function foodList() {
   if (!index.size) return '<p class="empty big">No foods logged yet.</p>'
-  const k = key(q)
-  const items = [...index.values()].filter(e => e.k.includes(k)).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-  if (!items.length) return `<p class="empty big">She hasn’t had “${esc(q.trim())}” yet.<br>It would be a new food ✨</p>`
+  const k = key(q), hits = new Map()
+  for (const date of Object.keys(data.days).sort()) {
+    if (date < filt.from) continue
+    for (const m of data.days[date]) {
+      if ((filt.rx && m.reaction !== filt.rx) || (filt.slot && m.slot !== filt.slot)) continue
+      for (const f of m.foods) {
+        const h = hits.get(key(f)) || hits.set(key(f), { dates: [], count: 0 }).get(key(f))
+        h.count++
+        if (h.dates.at(-1) !== date) h.dates.push(date)
+      }
+    }
+  }
+  const items = [...hits].filter(([f]) => f.includes(k)).map(([f, h]) => ({ ...index.get(f), ...h, reaction: filt.rx || index.get(f).reaction }))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+  if (!items.length) return filt.rx || filt.from || filt.slot ? '<p class="empty big">No foods match these filters.</p>' : `<p class="empty big">She hasn’t had “${esc(q.trim())}” yet.<br>It would be a new food ✨</p>`
   return `<p class="count">${plural(items.length, 'food')}</p>` + items.map(e => `
     <div class="card frow" role="button" tabindex="0" data-act="toggle">
-      <div class="fr"><div class="fn"><b>${esc(e.name)}</b><span>First ${fmt(e.first.date, { day: 'numeric', month: 'short', year: 'numeric' })} · ${plural(e.count, 'time')}</span></div>${rx(e.reaction, true)}</div>
+      <div class="fr"><div class="fn"><b>${esc(e.name)}</b><span>Last ${fmt(e.dates.at(-1), { day: 'numeric', month: 'short', year: 'numeric' })} · ${plural(e.count, 'time')}</span></div>${rx(e.reaction, true)}</div>
       <div class="fdates">${[...e.dates].reverse().map(d => `<button data-go="#/day/${d}">${fmt(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</button>`).join('')}</div>
     </div>`).join('')
 }
@@ -552,6 +571,9 @@ const act = {
   slot: el => { edit.slot = el.dataset.v; act.press(el, edit.slot); drawFoods() },
   tag: el => { const i = edit.tags.indexOf(el.dataset.v); i < 0 ? edit.tags.push(el.dataset.v) : edit.tags.splice(i, 1); el.setAttribute('aria-pressed', i < 0) },
   rx: el => { edit.reaction = edit.reaction === el.dataset.v ? '' : el.dataset.v; act.press(el, edit.reaction) },
+  frx: el => { filt.rx = filt.rx === el.dataset.v ? '' : el.dataset.v; act.press(el, filt.rx); $('#flist').innerHTML = foodList() },
+  fslot: el => { filt.slot = filt.slot === el.dataset.v ? '' : el.dataset.v; act.press(el, filt.slot); $('#flist').innerHTML = foodList() },
+  frange: el => { filt.from = filt.from === el.dataset.v ? '' : el.dataset.v; act.press(el, filt.from); $('#flist').innerHTML = foodList() },
   press: (el, v) => [...el.parentNode.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)),
   addfood: () => addFood($('#fi').value),
   pick: el => addFood(el.dataset.f),
