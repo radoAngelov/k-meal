@@ -109,11 +109,10 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
 .chip{display:inline-flex;align-items:center;min-height:44px;padding:0 0 0 14px;font-size:16px;border-radius:22px}
 .chip>span{overflow-wrap:anywhere;padding:8px 0;min-width:0}
 .chip button{width:44px;height:44px;border:0;background:none;color:var(--muted);font-size:22px;line-height:1;flex:none}
-.fin{display:flex;align-items:center;gap:8px}
-.newtag{flex:none;font-size:14px;font-weight:700;color:var(--gold);white-space:nowrap}
 .sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .sugg:empty{display:none}
-.sugg>span{font-size:13px;color:var(--muted);width:100%}
+.sugg button:first-child{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sugg button.new{border-style:dashed;border-color:var(--gold-line);color:var(--gold);box-shadow:none}
 .sugg button{min-height:44px;max-width:100%;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 14px;font-size:15px;overflow-wrap:anywhere;text-align:left}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tags button{min-height:44px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 12px;font-size:15px;display:inline-flex;align-items:center;gap:6px}
@@ -351,8 +350,8 @@ function form() {
   return `<form class="card form" id="mf" autocomplete="off">
     <div class="seg" role="group" aria-label="Meal">${seg('slot', Object.entries(SLOT), edit.slot)}</div>
     <div class="field" id="ff"><span class="lbl">Foods</span><div class="chips" id="chips">${chips()}</div>
-      <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="none" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
-      <div class="sugg" id="sugg">${sugg('')}</div></div>
+      <input id="fi" aria-label="Food" autocapitalize="none" spellcheck="false">
+      <div class="sugg" id="sugg"></div></div>
     <div class="field"><span class="lbl">Tags</span><div class="tags" role="group" aria-label="Tags">${Object.entries(TAG).map(([k, [e, l]]) => `<button type="button" data-act="tag" data-v="${k}" aria-pressed="${edit.tags.includes(k)}">${e} ${l}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Reaction <small>optional</small></span><div class="seg three" role="group" aria-label="Reaction">${seg('rx', Object.entries(REACT).map(([k, [e, l]]) => [k, `${e} ${l}`]), edit.reaction)}</div></div>
     <label class="field"><span class="lbl">Note <small>optional</small></span><textarea id="fn" rows="2">${esc(edit.note)}</textarea></label>
@@ -364,18 +363,19 @@ const chips = () => edit.foods.map((f, i) => { const first = draftFirst(f); retu
 
 function sugg(text) {
   const k = key(text)
-  const rank = e => key(e.name).startsWith(k) ? 0 : key(e.name).includes(' ' + k) ? 1 : 2
-  const list = [...index.values()].filter(e => !inDraft(e.name) && key(e.name).includes(k))
-    .sort((a, b) => (k ? rank(a) - rank(b) : 0) || b.dates.at(-1).localeCompare(a.dates.at(-1)) || a.name.localeCompare(b.name))
+  if (!k || k.includes(',') || inDraft(k)) return ''
+  const rank = e => e.k === k ? 0 : e.k.startsWith(k) ? 1 : e.k.includes(' ' + k) ? 2 : 3
+  const list = [...index.values()].filter(e => !inDraft(e.name) && e.k.includes(k))
+    .sort((a, b) => rank(a) - rank(b) || b.dates.at(-1).localeCompare(a.dates.at(-1)) || a.name.localeCompare(b.name))
     .slice(0, 8)
-  return list.length ? `<span>${k ? 'Had before' : 'Recent'}</span>${list.map(e => `<button type="button" data-act="pick" data-f="${esc(e.name)}" data-keep>${esc(e.name)}</button>`).join('')}` : ''
+  return list.map(e => `<button type="button" data-act="pick" data-f="${esc(e.name)}" data-keep>${esc(e.name)}</button>`).join('')
+    + (index.has(k) ? '' : `<button type="button" class="new" data-act="addfood" data-keep><i class="spark">✨</i>Add “${esc(k)}” as new</button>`)
 }
 
 function drawFoods() {
   const v = $('#fi').value.trim()
   $('#chips').innerHTML = chips()
   $('#sugg').innerHTML = sugg(v)
-  $('#fnew').hidden = !(v && !v.includes(',') && draftFirst(v) && !inDraft(v))
 }
 
 function addFood(text) {
@@ -585,7 +585,7 @@ document.addEventListener('click', e => {
   if (a) act[a.dataset.act](a)
 })
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.target.id === 'fi') { e.preventDefault(); addFood(e.target.value) }
+  if (e.key === 'Enter' && e.target.id === 'fi') { e.preventDefault(); const top = $('#sugg button'); top ? top.click() : addFood(e.target.value) }
   else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button]')) { e.preventDefault(); e.target.click() }
 })
 document.addEventListener('input', e => {
