@@ -263,7 +263,13 @@ let q = ''
 const scrolls = {}
 
 function load() {
-  try { const d = JSON.parse(read('data')); if (d && d.days) return d } catch {}
+  try {
+    const d = JSON.parse(read('data'))
+    if (d && d.days) {
+      for (const ms of Object.values(d.days)) for (const m of ms) m.foods = m.foods.map(key)
+      return d
+    }
+  } catch {}
   return { app: 'k-meal', version: 1, days: {} }
 }
 
@@ -345,7 +351,7 @@ function form() {
   return `<form class="card form" id="mf" autocomplete="off">
     <div class="seg" role="group" aria-label="Meal">${seg('slot', Object.entries(SLOT), edit.slot)}</div>
     <div class="field" id="ff"><span class="lbl">Foods</span><div class="chips" id="chips">${chips()}</div>
-      <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="sentences" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
+      <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="none" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
       <div class="sugg" id="sugg">${sugg('')}</div></div>
     <div class="field"><span class="lbl">Tags</span><div class="tags" role="group" aria-label="Tags">${Object.entries(TAG).map(([k, [e, l]]) => `<button type="button" data-act="tag" data-v="${k}" aria-pressed="${edit.tags.includes(k)}">${e} ${l}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Reaction <small>optional</small></span><div class="seg three" role="group" aria-label="Reaction">${seg('rx', Object.entries(REACT).map(([k, [e, l]]) => [k, `${e} ${l}`]), edit.reaction)}</div></div>
@@ -373,7 +379,7 @@ function drawFoods() {
 }
 
 function addFood(text) {
-  for (const f of text.split(',').map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean)) if (!inDraft(f)) edit.foods.push(f)
+  for (const f of text.split(',').map(key).filter(Boolean)) if (!inDraft(f)) edit.foods.push(f)
   $('#fi').value = ''
   drawFoods()
 }
@@ -485,7 +491,7 @@ function validate(o) {
   for (const [date, list] of Object.entries(o.days)) {
     if (!validDate(date) || !Array.isArray(list)) throw Error(`The backup has an invalid day: ${date}`)
     const ms = list.map(m => {
-      const foods = Array.isArray(m?.foods) ? m.foods.filter(f => typeof f === 'string' && f.trim()).map(f => f.trim()) : []
+      const foods = Array.isArray(m?.foods) ? m.foods.filter(f => typeof f === 'string' && f.trim()).map(key) : []
       if (!SLOTS.includes(m?.slot) || !foods.length || (m.reaction && !REACT[m.reaction])) throw Error(`The backup has an invalid meal on ${date}.`)
       const id = typeof m.id === 'string' && m.id && !ids.has(m.id) ? m.id : uid()
       ids.add(id)
