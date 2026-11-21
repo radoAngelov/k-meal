@@ -417,6 +417,10 @@ function settingsView() {
       <input type="file" id="file" hidden>
       <p class="muted" id="persist" style="margin-top:12px"></p>
     </section>
+    <section class="card"><h2>Reset</h2>
+      <p class="muted">Delete all meals and foods from this phone. Export a backup first if you might need them.</p>
+      <button class="btn danger wide" data-act="reset">Reset all data…</button>
+    </section>
   </main>`
 }
 
@@ -572,6 +576,11 @@ const act = {
   theme: el => { store('theme', el.dataset.v); applyTheme(); act.press(el, el.dataset.v) },
   exp: exportData,
   imp: () => $('#file').click(),
+  reset: async () => {
+    if (!await ask('Delete all meals and foods? This cannot be undone.', 'Delete everything', true)) return
+    data = { app: 'k-meal', version: 1, days: {} }
+    commit('All data deleted')
+  },
   hello: el => { el.classList.add('out'); setTimeout(() => el.remove(), 450) }
 }
 
