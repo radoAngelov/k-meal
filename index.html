@@ -75,7 +75,6 @@ body.editing main{padding-bottom:calc(45vh + env(safe-area-inset-bottom))}
 .note{grid-column:2;color:var(--muted);font-size:14px;overflow-wrap:anywhere;margin-top:3px;white-space:pre-line}
 .empty{color:var(--muted);font-size:15px}
 .empty.big{text-align:center;padding:28px 8px;font-size:16px;overflow-wrap:anywhere}
-.amt{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .rx{font-size:13px;padding:2px 8px;border-radius:999px;background:var(--chip);white-space:nowrap;flex:none}
 .rx.allergic{background:var(--danger-soft);color:var(--danger);font-weight:600}
 .meal .mh{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
@@ -214,10 +213,9 @@ function draftFirst(f) {
 
 const pill = (f, first) => `<span class="food${first ? ' first' : ''}">${first ? '<i class="spark" aria-label="first time">✨</i>' : ''}${esc(f)}</span>`
 const rx = (r, full) => r ? `<span class="rx ${r}">${REACT[r][0]}${full || r === 'allergic' ? ' ' + REACT[r][1] : ''}</span>` : ''
-const amt = m => m.amount ? `<span class="amt">${esc(m.amount)}</span>` : ''
 const note = m => m.note ? `<p class="note">${esc(m.note)}</p>` : ''
 const foodsOf = m => m.foods.map(f => pill(f, isFirst(f, m))).join('')
-const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${amt(m)}${rx(m.reaction)}</div>${note(m)}</div>`
+const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${rx(m.reaction)}</div>${note(m)}</div>`
 const meals = d => sorted(data.days[d]).map(mealLine).join('') || '<p class="empty">Nothing logged</p>'
 const rel = d => ({ [today()]: 'Today', [shift(today(), -1)]: 'Yesterday', [shift(today(), 1)]: 'Tomorrow' })[d] || ''
 const header = (back, title, right = '<span class="ib"></span>', label = '') => `<header><div class="bar"><button class="ib back" data-back="${back}" aria-label="Back">${I.prev}${label}</button>${title}${right}</div>`
@@ -239,7 +237,7 @@ function weekView(start) {
 
 function dayView(d) {
   const ms = sorted(data.days[d])
-  const card = m => `<div class="card meal" role="button" tabindex="0" data-act="edit" data-id="${m.id}"><div class="mh"><b>${SLOT[m.slot]}</b>${amt(m)}${rx(m.reaction, true)}</div><div class="foods">${foodsOf(m)}</div>${note(m)}</div>`
+  const card = m => `<div class="card meal" role="button" tabindex="0" data-act="edit" data-id="${m.id}"><div class="mh"><b>${SLOT[m.slot]}</b>${rx(m.reaction, true)}</div><div class="foods">${foodsOf(m)}</div>${note(m)}</div>`
   return `${header(`#/week/${monday(d)}`, `<h1 class="dt">${fmt(d, { weekday: 'long' })}<span>${fmt(d, { day: 'numeric', month: 'short', year: 'numeric' })}${rel(d) ? ' · ' + rel(d) : ''}</span></h1>`,
     `<button class="ib" data-go="#/day/${shift(d, -1)}" data-replace aria-label="Previous day">${I.prev}</button><button class="ib" data-go="#/day/${shift(d, 1)}" data-replace aria-label="Next day">${I.next}</button>`, 'Week')}</header>
   <main>
@@ -258,7 +256,6 @@ function form() {
     <div class="field" id="ff"><span class="lbl">Foods</span><div class="chips" id="chips">${chips()}</div>
       <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="sentences" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
       <div class="sugg" id="sugg">${sugg('')}</div></div>
-    <label class="field"><span class="lbl">Amount <small>optional</small></span><input id="fa" value="${esc(edit.amount)}" placeholder="e.g. 3 spoons"></label>
     <div class="field"><span class="lbl">Reaction <small>optional</small></span><div class="seg three" role="group" aria-label="Reaction">${seg('rx', Object.entries(REACT).map(([k, [e, l]]) => [k, `${e} ${l}`]), edit.reaction)}</div></div>
     <label class="field"><span class="lbl">Note <small>optional</small></span><textarea id="fn" rows="2">${esc(edit.note)}</textarea></label>
     <div class="actions">${edit.id ? '<button type="button" class="btn danger" data-act="del">Delete</button>' : ''}<span></span><button type="button" class="btn" data-act="cancel">Cancel</button><button type="button" class="btn primary" data-act="save">Save</button></div>
@@ -364,7 +361,7 @@ function openForm(id) {
   const used = new Set((data.days[d] || []).map(x => x.slot))
   const h = new Date().getHours()
   const slot = m?.slot || (d === today() ? (h < 11 ? 'breakfast' : h < 15 ? 'lunch' : h < 17 ? 'snack' : 'dinner') : SLOTS.find(s => !used.has(s)) || 'snack')
-  edit = { date: d, id: m ? id : null, slot, foods: m ? [...m.foods] : [], amount: m?.amount || '', reaction: m?.reaction || '', note: m?.note || '', t: m?.t ?? Date.now(), idx: foodIndex(m ? id : undefined) }
+  edit = { date: d, id: m ? id : null, slot, foods: m ? [...m.foods] : [], reaction: m?.reaction || '', note: m?.note || '', t: m?.t ?? Date.now(), idx: foodIndex(m ? id : undefined) }
   render()
   if (m) scrollBy(0, $('#mf').getBoundingClientRect().top - $('header').getBoundingClientRect().bottom - 12)
   else $('#fi').focus()
@@ -400,7 +397,7 @@ function validate(o) {
       if (!SLOTS.includes(m?.slot) || !foods.length || (m.reaction && !REACT[m.reaction])) throw Error(`The backup has an invalid meal on ${date}.`)
       const id = typeof m.id === 'string' && m.id && !ids.has(m.id) ? m.id : uid()
       ids.add(id)
-      return { id, slot: m.slot, foods, amount: str(m.amount), reaction: m.reaction || '', note: str(m.note), t: Number.isFinite(m.t) ? m.t : 0 }
+      return { id, slot: m.slot, foods, reaction: m.reaction || '', note: str(m.note), t: Number.isFinite(m.t) ? m.t : 0 }
     })
     if (ms.length) days[date] = ms
   }
@@ -460,7 +457,7 @@ const act = {
   save: () => {
     addFood($('#fi').value)
     if (!edit.foods.length) return toast('Add at least one food'), $('#fi').focus()
-    const m = { id: edit.id || uid(), slot: edit.slot, foods: edit.foods, amount: $('#fa').value.trim(), reaction: edit.reaction, note: $('#fn').value.trim(), t: edit.t }
+    const m = { id: edit.id || uid(), slot: edit.slot, foods: edit.foods, reaction: edit.reaction, note: $('#fn').value.trim(), t: edit.t }
     const list = data.days[edit.date] ||= []
     const i = list.findIndex(x => x.id === m.id)
     i < 0 ? list.push(m) : list[i] = m
@@ -489,7 +486,6 @@ document.addEventListener('click', e => {
 })
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'fi') { e.preventDefault(); addFood(e.target.value) }
-  else if (e.key === 'Enter' && e.target.id === 'fa') { e.preventDefault(); e.target.blur() }
   else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button]')) { e.preventDefault(); e.target.click() }
 })
 document.addEventListener('input', e => {
