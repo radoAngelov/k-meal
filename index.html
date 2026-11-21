@@ -88,6 +88,7 @@ body.editing main{padding-bottom:calc(45vh + env(safe-area-inset-bottom))}
 .btn.wide{width:100%;margin-top:10px}
 .add{width:100%;margin-top:12px}
 .prev{margin-top:28px}
+main:not(.grid)>.wk{margin-top:16px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .pday{padding:10px 0;border-top:1px solid var(--line)}
 .form{display:grid;gap:16px;border:2px solid var(--accent)}
@@ -119,14 +120,9 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
 .tags button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
 .tg{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;font-size:15px}
 .meal .tg{margin-top:8px}
-.tally{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.tally div{display:grid;justify-items:center;align-content:start;gap:1px;padding:8px 2px;border-radius:12px;background:var(--chip);text-align:center}
-.tally span{font-size:22px;line-height:1.2}
-.tally b{font-size:17px;color:var(--accent)}
-.tally small{font-size:12px;line-height:1.2;color:var(--muted);overflow-wrap:anywhere}
-.tally .none{background:none;box-shadow:inset 0 0 0 1px var(--line)}
-.tally .none span{filter:grayscale(1);opacity:.4}
-.tally .none b{color:var(--muted);font-weight:500}
+.tally{display:flex;flex-wrap:wrap;gap:6px}
+.tally span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:999px;background:var(--chip);font-size:15px;white-space:nowrap}
+.tally b{color:var(--accent);font-size:14px}
 .actions{display:flex;gap:8px;align-items:center}
 .actions span{flex:1}
 .search{padding:0 8px 10px}
@@ -307,17 +303,21 @@ const meals = d => sorted(data.days[d]).map(mealLine).join('') || '<p class="emp
 const rel = d => ({ [today()]: 'Today', [shift(today(), -1)]: 'Yesterday', [shift(today(), 1)]: 'Tomorrow' })[d] || ''
 const header = (back, title, right = '<span class="ib"></span>', label = '') => `<header><div class="bar"><button class="ib back" data-back="${back}" aria-label="Back">${I.prev}${label}</button>${title}${right}</div>`
 
-function weekView(start) {
-  const t = today(), cur = monday(t) === start
+function weekTags(start) {
   const n = {}
   for (let i = 0; i < 7; i++) for (const m of data.days[shift(start, i)] || []) for (const k of m.tags || []) n[k] = (n[k] || 0) + 1
+  return Object.keys(n).length ? `<section class="card wk"><h2>Tags this week</h2><div class="tally">${Object.entries(TAG).filter(([k]) => n[k]).sort(([a], [b]) => n[b] - n[a]).map(([k, [e, l]]) => `<span>${e} ${l} <b>${n[k]}</b></span>`).join('')}</div></section>` : ''
+}
+
+function weekView(start) {
+  const t = today(), cur = monday(t) === start
   const range = `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(shift(start, 6), { day: 'numeric', month: 'short', year: 'numeric' })}`
   return `<header>
     <div class="bar"><h1 class="brand"><img src="icon-180.png" alt="K-meal" width="36" height="36"></h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
     <div class="bar"><button class="ib" data-go="#/week/${shift(start, -7)}" data-replace aria-label="Previous week">${I.prev}</button><button class="range" ${cur ? 'disabled' : `data-go="#/week/${monday(t)}" data-replace`}><b>${range}</b><small>${cur ? 'This week' : 'Go to this week'}</small></button><button class="ib" data-go="#/week/${shift(start, 7)}" data-replace aria-label="Next week">${I.next}</button></div>
   </header>
   <main class="grid">
-    <section class="card"><h2>Tags this week</h2><div class="tally">${Object.entries(TAG).map(([k, [e, l]]) => `<div${n[k] ? '' : ' class="none"'}><span>${e}</span><b>${n[k] || 0}</b><small>${l}</small></div>`).join('')}</div></section>${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `
+    ${weekTags(start)}${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `
     <div class="card day${d === t ? ' today' : ''}" role="button" tabindex="0" data-go="#/day/${d}">
       <div class="dh"><b>${fmt(d, { weekday: 'short' })}</b><span>${fmt(d, { day: 'numeric', month: 'short' })}</span>${d === t ? '<em>Today</em>' : ''}</div>
       ${meals(d)}
@@ -333,6 +333,7 @@ function dayView(d) {
   <main>
     <section class="grid">${ms.map(m => edit?.id === m.id ? form() : card(m)).join('')}${edit && !edit.id ? form() : ''}${!ms.length && !edit ? '<p class="empty big">Nothing logged yet</p>' : ''}</section>
     ${edit ? '' : `<button class="btn primary add" data-act="new">${I.plus}Add meal</button>`}
+    ${weekTags(monday(d))}
     <section class="prev"><h2>Previous days</h2>${[1, 2, 3, 4].map(i => shift(d, -i)).map(p => `
       <div class="pday"><div class="dh"><b>${fmt(p, { weekday: 'short' })}</b><span>${fmt(p, { day: 'numeric', month: 'short' })}</span><i>${rel(p)}</i></div>${meals(p)}</div>`).join('')}
     </section>
