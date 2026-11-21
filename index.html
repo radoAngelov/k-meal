@@ -114,6 +114,19 @@ input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-2px}
 .sugg:empty{display:none}
 .sugg>span{font-size:13px;color:var(--muted);width:100%}
 .sugg button{min-height:44px;max-width:100%;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 14px;font-size:15px;overflow-wrap:anywhere;text-align:left}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags button{min-height:44px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:0 12px;font-size:15px;display:inline-flex;align-items:center;gap:6px}
+.tags button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.tg{grid-column:2;display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;font-size:15px}
+.meal .tg{margin-top:8px}
+.tally{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tally div{display:grid;justify-items:center;align-content:start;gap:1px;padding:8px 2px;border-radius:12px;background:var(--chip);text-align:center}
+.tally span{font-size:22px;line-height:1.2}
+.tally b{font-size:17px;color:var(--accent)}
+.tally small{font-size:12px;line-height:1.2;color:var(--muted);overflow-wrap:anywhere}
+.tally .none{background:none;box-shadow:inset 0 0 0 1px var(--line)}
+.tally .none span{filter:grayscale(1);opacity:.4}
+.tally .none b{color:var(--muted);font-weight:500}
 .actions{display:flex;gap:8px;align-items:center}
 .actions span{flex:1}
 .search{padding:0 8px 10px}
@@ -219,6 +232,7 @@ const PHRASES = [
   "Let’s make today count, one good meal at a time."
 ]
 const REACT = { liked: ['😋', 'Liked'], disliked: ['🙅', 'Disliked'], allergic: ['⚠️', 'Allergy?'] }
+const TAG = { chicken: ['🍗', 'Chicken'], pork: ['🐖', 'Pork'], fish: ['🐟', 'Fish'], lamb: ['🐑', 'Lamb'], rabbit: ['🐇', 'Rabbit'], beef: ['🐄', 'Beef'], carbs: ['🍞', 'Carbs'], 'egg-white': ['⚪', 'Egg white'], 'egg-yolk': ['🟡', 'Egg yolk'], 'whole-egg': ['🥚', 'Whole egg'], legumes: ['🫘', 'Legumes'], vegetables: ['🥕', 'Vegetables'], fruit: ['🍎', 'Fruit'], yoghurt: ['🥛', 'Yoghurt'], honey: ['🍯', 'Honey'], nuts: ['🥜', 'Nuts'] }
 const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`
 const I = {
   prev: svg('<path d="M15 5l-7 7 7 7"/>'),
@@ -286,20 +300,24 @@ function draftFirst(f) {
 const pill = (f, first) => `<span class="food${first ? ' first' : ''}">${first ? '<i class="spark" aria-label="first time">✨</i>' : ''}${esc(f)}</span>`
 const rx = (r, full) => r ? `<span class="rx ${r}">${REACT[r][0]}${full || r === 'allergic' ? ' ' + REACT[r][1] : ''}</span>` : ''
 const note = m => m.note ? `<p class="note">${esc(m.note)}</p>` : ''
+const tagsOf = (m, full) => m.tags?.length ? `<div class="tg">${m.tags.map(t => full ? `<span class="rx">${TAG[t].join(' ')}</span>` : `<span title="${TAG[t][1]}" aria-label="${TAG[t][1]}">${TAG[t][0]}</span>`).join('')}</div>` : ''
 const foodsOf = m => m.foods.map(f => pill(f, isFirst(f, m))).join('')
-const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${rx(m.reaction)}</div>${note(m)}</div>`
+const mealLine = m => `<div class="ml"><span class="slot">${SLOT[m.slot]}</span><div class="foods">${foodsOf(m)}${rx(m.reaction)}</div>${tagsOf(m)}${note(m)}</div>`
 const meals = d => sorted(data.days[d]).map(mealLine).join('') || '<p class="empty">Nothing logged</p>'
 const rel = d => ({ [today()]: 'Today', [shift(today(), -1)]: 'Yesterday', [shift(today(), 1)]: 'Tomorrow' })[d] || ''
 const header = (back, title, right = '<span class="ib"></span>', label = '') => `<header><div class="bar"><button class="ib back" data-back="${back}" aria-label="Back">${I.prev}${label}</button>${title}${right}</div>`
 
 function weekView(start) {
   const t = today(), cur = monday(t) === start
+  const n = {}
+  for (let i = 0; i < 7; i++) for (const m of data.days[shift(start, i)] || []) for (const k of m.tags || []) n[k] = (n[k] || 0) + 1
   const range = `${fmt(start, { day: 'numeric', month: 'short' })} – ${fmt(shift(start, 6), { day: 'numeric', month: 'short', year: 'numeric' })}`
   return `<header>
     <div class="bar"><h1 class="brand"><img src="icon-180.png" alt="K-meal" width="36" height="36"></h1><button class="ib" data-go="#/foods">Foods</button><button class="ib" data-go="#/settings" aria-label="Settings">${I.settings}</button></div>
     <div class="bar"><button class="ib" data-go="#/week/${shift(start, -7)}" data-replace aria-label="Previous week">${I.prev}</button><button class="range" ${cur ? 'disabled' : `data-go="#/week/${monday(t)}" data-replace`}><b>${range}</b><small>${cur ? 'This week' : 'Go to this week'}</small></button><button class="ib" data-go="#/week/${shift(start, 7)}" data-replace aria-label="Next week">${I.next}</button></div>
   </header>
-  <main class="grid">${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `
+  <main class="grid">
+    <section class="card"><h2>Tags this week</h2><div class="tally">${Object.entries(TAG).map(([k, [e, l]]) => `<div${n[k] ? '' : ' class="none"'}><span>${e}</span><b>${n[k] || 0}</b><small>${l}</small></div>`).join('')}</div></section>${[0, 1, 2, 3, 4, 5, 6].map(i => shift(start, i)).map(d => `
     <div class="card day${d === t ? ' today' : ''}" role="button" tabindex="0" data-go="#/day/${d}">
       <div class="dh"><b>${fmt(d, { weekday: 'short' })}</b><span>${fmt(d, { day: 'numeric', month: 'short' })}</span>${d === t ? '<em>Today</em>' : ''}</div>
       ${meals(d)}
@@ -309,7 +327,7 @@ function weekView(start) {
 
 function dayView(d) {
   const ms = sorted(data.days[d])
-  const card = m => `<div class="card meal" role="button" tabindex="0" data-act="edit" data-id="${m.id}"><div class="mh"><b>${SLOT[m.slot]}</b>${rx(m.reaction, true)}</div><div class="foods">${foodsOf(m)}</div>${note(m)}</div>`
+  const card = m => `<div class="card meal" role="button" tabindex="0" data-act="edit" data-id="${m.id}"><div class="mh"><b>${SLOT[m.slot]}</b>${rx(m.reaction, true)}</div><div class="foods">${foodsOf(m)}</div>${tagsOf(m, true)}${note(m)}</div>`
   return `${header(`#/week/${monday(d)}`, `<h1 class="dt">${fmt(d, { weekday: 'long' })}<span>${fmt(d, { day: 'numeric', month: 'short', year: 'numeric' })}${rel(d) ? ' · ' + rel(d) : ''}</span></h1>`,
     `<button class="ib" data-go="#/day/${shift(d, -1)}" data-replace aria-label="Previous day">${I.prev}</button><button class="ib" data-go="#/day/${shift(d, 1)}" data-replace aria-label="Next day">${I.next}</button>`, 'Week')}</header>
   <main>
@@ -328,6 +346,7 @@ function form() {
     <div class="field" id="ff"><span class="lbl">Foods</span><div class="chips" id="chips">${chips()}</div>
       <div class="fin"><input id="fi" placeholder="Type a food" aria-label="Food" autocapitalize="sentences" spellcheck="false"><span id="fnew" class="newtag" hidden><i class="spark">✨</i>New</span><button type="button" class="btn sm" data-act="addfood" data-keep>Add</button></div>
       <div class="sugg" id="sugg">${sugg('')}</div></div>
+    <div class="field"><span class="lbl">Tags</span><div class="tags" role="group" aria-label="Tags">${Object.entries(TAG).map(([k, [e, l]]) => `<button type="button" data-act="tag" data-v="${k}" aria-pressed="${edit.tags.includes(k)}">${e} ${l}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Reaction <small>optional</small></span><div class="seg three" role="group" aria-label="Reaction">${seg('rx', Object.entries(REACT).map(([k, [e, l]]) => [k, `${e} ${l}`]), edit.reaction)}</div></div>
     <label class="field"><span class="lbl">Note <small>optional</small></span><textarea id="fn" rows="2">${esc(edit.note)}</textarea></label>
     <div class="actions">${edit.id ? '<button type="button" class="btn danger" data-act="del">Delete</button>' : ''}<span></span><button type="button" class="btn" data-act="cancel">Cancel</button><button type="button" class="btn primary" data-act="save">Save</button></div>
@@ -433,7 +452,7 @@ function openForm(id) {
   const used = new Set((data.days[d] || []).map(x => x.slot))
   const h = new Date().getHours()
   const slot = m?.slot || (d === today() ? (h < 11 ? 'breakfast' : h < 15 ? 'lunch' : h < 17 ? 'snack' : 'dinner') : SLOTS.find(s => !used.has(s)) || 'snack')
-  edit = { date: d, id: m ? id : null, slot, foods: m ? [...m.foods] : [], reaction: m?.reaction || '', note: m?.note || '', t: m?.t ?? Date.now(), idx: foodIndex(m ? id : undefined) }
+  edit = { date: d, id: m ? id : null, slot, foods: m ? [...m.foods] : [], tags: [...(m?.tags || [])], reaction: m?.reaction || '', note: m?.note || '', t: m?.t ?? Date.now(), idx: foodIndex(m ? id : undefined) }
   render()
   if (m) scrollBy(0, $('#mf').getBoundingClientRect().top - $('header').getBoundingClientRect().bottom - 12)
   else $('#fi').focus()
@@ -469,7 +488,7 @@ function validate(o) {
       if (!SLOTS.includes(m?.slot) || !foods.length || (m.reaction && !REACT[m.reaction])) throw Error(`The backup has an invalid meal on ${date}.`)
       const id = typeof m.id === 'string' && m.id && !ids.has(m.id) ? m.id : uid()
       ids.add(id)
-      return { id, slot: m.slot, foods, reaction: m.reaction || '', note: str(m.note), t: Number.isFinite(m.t) ? m.t : 0 }
+      return { id, slot: m.slot, foods, tags: Object.keys(TAG).filter(k => Array.isArray(m.tags) && m.tags.includes(k)), reaction: m.reaction || '', note: str(m.note), t: Number.isFinite(m.t) ? m.t : 0 }
     })
     if (ms.length) days[date] = ms
   }
@@ -520,6 +539,7 @@ const act = {
   new: () => openForm(null),
   edit: el => openForm(el.dataset.id),
   slot: el => { edit.slot = el.dataset.v; act.press(el, edit.slot); drawFoods() },
+  tag: el => { const i = edit.tags.indexOf(el.dataset.v); i < 0 ? edit.tags.push(el.dataset.v) : edit.tags.splice(i, 1); el.setAttribute('aria-pressed', i < 0) },
   rx: el => { edit.reaction = edit.reaction === el.dataset.v ? '' : el.dataset.v; act.press(el, edit.reaction) },
   press: (el, v) => [...el.parentNode.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)),
   addfood: () => addFood($('#fi').value),
@@ -529,7 +549,7 @@ const act = {
   save: () => {
     addFood($('#fi').value)
     if (!edit.foods.length) return toast('Add at least one food'), $('#fi').focus()
-    const m = { id: edit.id || uid(), slot: edit.slot, foods: edit.foods, reaction: edit.reaction, note: $('#fn').value.trim(), t: edit.t }
+    const m = { id: edit.id || uid(), slot: edit.slot, foods: edit.foods, tags: Object.keys(TAG).filter(k => edit.tags.includes(k)), reaction: edit.reaction, note: $('#fn').value.trim(), t: edit.t }
     const list = data.days[edit.date] ||= []
     const i = list.findIndex(x => x.id === m.id)
     i < 0 ? list.push(m) : list[i] = m
